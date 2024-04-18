@@ -1,11 +1,16 @@
 import java.util.*;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
+import java.util.Scanner;
 public class App {
+    /**
+     * @param args
+     * @throws Exception
+     */
     public static void main(String[] args) throws Exception {
         //Item[] items = {
            // new Item(2, 10),
@@ -16,8 +21,7 @@ public class App {
        // };
         //int capacity = 10;
 
-        //String filePath = ("C:\\jessi\\OneDrive\\Documentos\\Ciência da Computação\\5º-Periodo\\Inteligencia-Artificial\\ProblemaMochilaGenetico\\Instancias\\KNAPDATA40.txt");
-        String filePath = ("C:\\Users\\jessi\\Desktop\\KNAPDATA40.TXT");
+        File filePath = new File("..\\ProblemaMochilaGenetico\\Instancias\\KNAPDATA40.txt");
         
         // Lista para armazenar os itens
         Item[] items = null;
@@ -36,16 +40,28 @@ public class App {
             // Lendo a capacidade da mochila
             capacity = Integer.parseInt(br.readLine());
 
-            String line;
-            int numItems = Integer.parseInt(br.readLine());
+            int numItems = 0;
+            while (br.readLine() != null) {
+                numItems++;
+            }
+
+            br.close();
+            
+            BufferedReader brItems = new BufferedReader(new FileReader(filePath));
+            // Ignorando as duas primeiras linhas
+            brItems.readLine();
+            brItems.readLine();
+
             items = new Item[numItems];
             for (int i = 0; i < numItems; i++) {
-                line = br.readLine();
-                String[] parts = line.split(",");
-                String name = parts[0];
-                int weight = Integer.parseInt(parts[1]);
-                int value = Integer.parseInt(parts[2]);
+                String line = brItems.readLine();
+                Scanner scanner = new Scanner(line);
+                scanner.useDelimiter(",");
+                scanner.next(); // Ignora o nome do item
+                int weight = scanner.nextInt();
+                int value = scanner.nextInt();
                 items[i] = new Item(weight, value);
+                scanner.close();
             }
         } catch (IOException e) {
             e.printStackTrace();

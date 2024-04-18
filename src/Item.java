@@ -7,7 +7,6 @@ public class Item {
         this.weight = weight;
         this.value = value;
     }
-
     public int getWeight() {
         return weight;
     }
