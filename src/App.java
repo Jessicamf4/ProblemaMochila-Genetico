@@ -34,26 +34,19 @@ public class App {
 
         // Leitura do arquivo
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
-            // Lendo o tamanho da população
-            populationSize = Integer.parseInt(br.readLine());
-
-            // Lendo a capacidade da mochila
+            // Lendo capacidade da mochila
             capacity = Integer.parseInt(br.readLine());
 
-            int numItems = 0;
-            while (br.readLine() != null) {
-                numItems++;
-            }
+            // Lendo tamanho da população
+            populationSize = Integer.parseInt(br.readLine());
 
-            br.close();
-            
             BufferedReader brItems = new BufferedReader(new FileReader(filePath));
             // Ignorando as duas primeiras linhas
             brItems.readLine();
             brItems.readLine();
 
-            items = new Item[numItems];
-            for (int i = 0; i < numItems; i++) {
+            items = new Item[populationSize];
+            for (int i = 0; i < populationSize; i++) {
                 String line = brItems.readLine();
                 Scanner scanner = new Scanner(line);
                 scanner.useDelimiter(",");
@@ -77,12 +70,17 @@ public class App {
         int[] solution = genetic_algorithm_knapsack(items, capacity, populationSize, crossoverRate, mutationRate, numGenerations);
 
         // Imprimir a solução encontrada
+        for(int i =0; i < solution.length; i++){
+            System.out.print(solution[i] + ", ");
+        }
+        
        
     }
 
     // Função para implementar o algoritmo genético para o Problema da Mochila
     static int[] genetic_algorithm_knapsack(Item[] items, int capacity, int populationSize, double crossoverRate, double mutationRate, int numGenerations) {
         int[][] population = generate_initial_population(items.length, populationSize);
+        
         Random rand = new Random();
 
         for (int gen = 0; gen < numGenerations; gen++) {
