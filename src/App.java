@@ -21,7 +21,7 @@ public class App {
        // };
         //int capacity = 10;
 
-        File filePath = new File("..\\ProblemaMochilaGenetico\\Instancias\\KNAPDATA40.txt");
+        File filePath = new File("..\\ProblemaMochilaGenetico\\Instancias\\KNAPDATA100.txt");
         
         // Lista para armazenar os itens
         Item[] items = null;
@@ -110,17 +110,37 @@ public class App {
     }
 
     // Função para gerar uma população inicial aleatória
+    // static int[][] generate_initial_population(int size, int populationSize) {
+    //     int[][] population = new int[populationSize][size];
+    //     Random rand = new Random();
+    //     for (int i = 0; i < populationSize; i++) {
+    //         for (int j = 0; j < size; j++) {
+    //             population[i][j] = rand.nextInt(2); // 0 ou 1 (selecionado ou não selecionado)
+    //         }
+    //     }
+    //     return population;
+    // }
+
     static int[][] generate_initial_population(int size, int populationSize) {
         int[][] population = new int[populationSize][size];
         Random rand = new Random();
+
+        //int chanceAdicao = rand.nextInt(100);
+
         for (int i = 0; i < populationSize; i++) {
             for (int j = 0; j < size; j++) {
-                population[i][j] = rand.nextInt(2); // 0 ou 1 (selecionado ou não selecionado)
+                if( rand.nextInt(100) > 85){
+                    population[i][j] = rand.nextInt(2); // 0 ou 1 (selecionado ou não selecionado)
+                } else{
+                    population[i][j] = 0;
+                }
+                
             }
         }
         return population;
+        
+        
     }
-
     // Função de fitness para calcular o valor total da mochila
     static int fitness_function(int[] solution, Item[] items, int capacity) {
         int totalValue = 0;
@@ -129,12 +149,18 @@ public class App {
             if (solution[i] == 1) {
                 totalValue += items[i].value;
                 totalWeight += items[i].weight;
-            }
+            } 
         }
+        System.out.println(totalWeight);
         // Penalize soluções que excedam a capacidade da mochila
 		// Implemente o método de penalização que achar mais adequado
-        if (totalWeight > capacity) {
-            totalValue = 0;
+        double margem10Percent = capacity*(1.1); 
+        if (totalWeight == capacity) {
+            totalValue += 100;
+        }else if((totalWeight > capacity && totalWeight < margem10Percent) || (totalWeight < capacity && totalWeight > capacity*(0.9))){
+            totalValue +=80;
+        }else{
+            totalValue =0;
         }
         return totalValue;
     }
@@ -167,7 +193,7 @@ public class App {
 
         // Calcula o fitness total e o fitness cumulativo
         for (int i = 0; i < population.length; i++) {
-            int fitness = fitness_function(population[i], items, capacity);
+            int fitness = fitness_function(population[i], items, capacity);           
             totalFitness += fitness;
             cumulativeFitness[i] = totalFitness;
         }
