@@ -13,7 +13,7 @@ public class App {
      */
     public static void main(String[] args) throws Exception {
        
-        File filePath = new File("..\\ProblemaMochilaGenetico\\Instancias\\KNAPDATA100.txt");
+        File filePath = new File("..\\ProblemaMochilaGenetico\\Instancias\\KNAPDATA100000.txt");
         
         // Lista para armazenar os itens
         Item[] items = null;
@@ -22,23 +22,25 @@ public class App {
         int capacity = 0;
 
         // Tamanho da população
-        int populationSize = 0;
+        int populationItens = 0;
 
+        //Margem de porcentagem de itens de devem ser inclusos da mochila
+        int expectedWeightMargin = 0;
         // Leitura do arquivo
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
             // Lendo capacidade da mochila
             capacity = Integer.parseInt(br.readLine());
 
             // Lendo tamanho da população
-            populationSize = Integer.parseInt(br.readLine());
+            populationItens = Integer.parseInt(br.readLine());
             
             BufferedReader brItems = new BufferedReader(new FileReader(filePath));
             // Ignorando as duas primeiras linhas
             brItems.readLine();
             brItems.readLine();
-
-            items = new Item[populationSize];
-            for (int i = 0; i < populationSize; i++) {
+            int totalWeight = 0;
+            items = new Item[populationItens];
+            for (int i = 0; i < populationItens; i++) {
                 String line = brItems.readLine();
                 Scanner scanner = new Scanner(line);
                 scanner.useDelimiter(",");
@@ -47,45 +49,59 @@ public class App {
                 int value = scanner.nextInt();
                 items[i] = new Item(weight, value);
                 scanner.close();
+                totalWeight += weight;
             }
+            expectedWeightMargin = Math.round(capacity*populationItens/totalWeight);
+            System.out.println(expectedWeightMargin);
         } catch (IOException e) {
             e.printStackTrace();
         }
 
         // Parâmetros do algoritmo genético
+        int populationSize = 50;
         double crossoverRate = 0.8;
         double mutationRate = 0.1;
-        int numGenerations = 500;
+        int numGenerations = 100;
 
         // Chamada para a função que implementa o algoritmo genético
-        int[] solution = genetic_algorithm_knapsack(items, capacity, populationSize, crossoverRate, mutationRate, numGenerations);
+        int[] solution = genetic_algorithm_knapsack(items, capacity, populationSize, crossoverRate, mutationRate, numGenerations, expectedWeightMargin);
 
         // Imprimir a solução encontrada
-        for(int i =0; i < solution.length; i++){
-            System.out.print(solution[i] + ", ");
+
+        int totalValue = 0;
+        int totalWeight = 0;
+        for (int i = 0; i < solution.length; i++) {
+            if (solution[i] == 1) {
+                totalValue += items[i].value;
+                totalWeight += items[i].weight;
+            } 
         }
-        
-       
+        System.out.println("Fitness " + fitness_function(solution, items, capacity)); 
+        System.out.println("Valor total " + totalValue); 
+        System.out.println("Peso total " + totalWeight); 
+        System.out.println("Peso esperado " + capacity);
+
     }
 
     // Função para implementar o algoritmo genético para o Problema da Mochila
-    static int[] genetic_algorithm_knapsack(Item[] items, int capacity, int populationSize, double crossoverRate, double mutationRate, int numGenerations) {
+    static int[] genetic_algorithm_knapsack(Item[] items, int capacity, int populationSize, double crossoverRate, double mutationRate, int numGenerations, int expectedWeightMargin) {
         
-        int[][] population = generate_initial_population(items.length, populationSize);
+        int[][] population = generate_initial_population(items.length, populationSize, expectedWeightMargin);
         
         Random rand = new Random();
 
         for (int gen = 0; gen < numGenerations; gen++) {
-            System.out.println("GERAÇÃO " + gen);
+            //System.out.println("GERAÇÃO " + gen);
             int[][] nextGeneration = new int[populationSize][items.length];
             for (int i = 0; i < populationSize; i++) {
-                int[] parent1 = tournament_selection(population, items, capacity);
-                int[] parent2 = tournament_selection(population, items, capacity);
+                int[] parent1 = roulette_selection(population, items, capacity);
+                int[] parent2 = roulette_selection(population, items, capacity);
                 int[] offspring = crossover(parent1, parent2, crossoverRate, items, capacity);
-                mutate(offspring, mutationRate);
+               mutate(offspring, mutationRate);
                 nextGeneration[i] = offspring;
             }
             population = nextGeneration;
+            
         }
 
         // Encontrar a melhor solução na última geração
@@ -102,16 +118,14 @@ public class App {
         return bestSolution;
     }
 
-    static int[][] generate_initial_population(int size, int populationSize) {
+    static int[][] generate_initial_population(int size, int populationSize, int expectedWeightMargin) {
         int[][] population = new int[populationSize][size];
         Random rand = new Random();
-
-        //int chanceAdicao = rand.nextInt(100);
-
+        int margemInclusaoItens = 100-expectedWeightMargin +2;
         for (int i = 0; i < populationSize; i++) {
             for (int j = 0; j < size; j++) {
-                if( rand.nextInt(100) > 90){
-                    population[i][j] = rand.nextInt(2); // 0 ou 1 (selecionado ou não selecionado)
+                if( rand.nextInt(100) > (margemInclusaoItens)){
+                    population[i][j] = rand.nextInt(2); 
                 } else{
                     population[i][j] = 0;
                 }
@@ -133,21 +147,11 @@ public class App {
                 totalWeight += items[i].weight;
             } 
         }
-        System.out.println(totalWeight);
-        // Penalize soluções que excedam a capacidade da mochila
-		// Implemente o método de penalização que achar mais adequado
-        // double margem10Percent = capacity*(1.1); 
-        // if (totalWeight > capacity) {
-        //     totalValue += 100;
-        // }else if((totalWeight > capacity && totalWeight < margem10Percent) || (totalWeight < capacity && totalWeight > capacity*(0.9))){
-        //     totalValue +=80;
-        // }else{
-        //     totalValue = 0;
-        // }
-        // return totalValue;
+ 
         if (totalWeight > capacity) {
             totalValue = 0;
         }
+        //System.out.println(totalValue);
         return totalValue;
     }
 
@@ -172,63 +176,39 @@ public class App {
 
     static Random rand = new Random();
 
-    static int[] roulette_selection(int[][] population, Item[] items, int capacity) {
-        Random rand = new Random();
-        int totalFitness = 0;
-        int[] cumulativeFitness = new int[population.length];
-        int selectedIdx = -1;
-
-        // Calcula o fitness total e o fitness cumulativo
-        for (int i = 0; i < population.length; i++) {
-            int fitness = fitness_function(population[i], items, capacity);
-            totalFitness += fitness + 1;
-            cumulativeFitness[i] = totalFitness;
-        }
-
-        // Gera um número aleatório dentro do fitness total
-        int randomFitness = rand.nextInt(totalFitness);
-
-        // Encontra o índice do indivíduo selecionado
-        for (int i = 0; i < population.length; i++) {
-            if (randomFitness < cumulativeFitness[i]) {
-                selectedIdx = i;
-                break;
-            }
-        }
-
-        return population[selectedIdx];
+    // Função para realizar a seleção por roleta
+static int[] roulette_selection(int[][] population, Item[] items, int capacity) {
+    Random rand = new Random();
+    double totalFitness = 0;
+    double[] fitnessProbabilities = new double[population.length];
+    
+    // Calcula o fitness total da população
+    for (int i = 0; i < population.length; i++) {
+        int fitness = fitness_function(population[i], items, capacity);
+        totalFitness += fitness;
     }
 
-    // static int[] roulette_selection(int[][] population, Item[] items, int capacity) {
-    //     int totalFitness = 0;
-    //     int[] fitnessItem = new int[population.length];
+    // Calcula as probabilidades de seleção para cada indivíduo
+    for (int i = 0; i < population.length; i++) {
+        int fitness = fitness_function(population[i], items, capacity);
+        fitnessProbabilities[i] = (double) fitness / totalFitness;
+    }
 
-    //     // Calcula o fitness total e o fitness cumulativo
-    //     for (int i = 0; i < population.length; i++) {
-    //         int fitness = fitness_function(population[i], items, capacity);
-    //         totalFitness += fitness + 1; // Adiciona 1 para evitar fitness zero
-    //         fitnessItem[i] = fitness + 1;
-    //     }
+    // Seleciona um pai com base nas probabilidades de fitness
+    double randomNum = rand.nextDouble();
+    double cumulativeProbability = 0;
+    for (int i = 0; i < population.length; i++) {
+        cumulativeProbability += fitnessProbabilities[i];
+        if (randomNum <= cumulativeProbability) {
+            return population[i];
+        }
+    }
 
-    //     // Constrói a roleta de seleção
-    //     int[] cumulativeProbabilities = new int[population.length];
-    //     int cumulative = 0;
-    //     for (int i = 0; i < population.length; i++) {
-    //         cumulative += fitnessItem[i];
-    //         cumulativeProbabilities[i] = cumulative;
-    //     }
+    // Caso algo dê errado, retorna um indivíduo aleatório
+    return population[rand.nextInt(population.length)];
+}
 
-    //     // Seleciona um ponto aleatório na roleta
-    //     int point = rand.nextInt(totalFitness) + 1; // +1 para evitar 0
-    //     int selectedIdx = 0;
-    //     while (selectedIdx < population.length && cumulativeProbabilities[selectedIdx] < point) {
-    //         selectedIdx++;
-    //     }
-
-    //     // Retorna o pai selecionado
-    //     return population[selectedIdx];
-    // }
-
+    
     // Função para realizar o cruzamento (crossover)
     static int[] crossover(int[] parent1, int[] parent2, double crossoverRate, Item[] items, int capacity) {
         Random rand = new Random();
@@ -272,11 +252,10 @@ public class App {
         Random rand = new Random();
         
         // Aplica a mutação em cada gene com base na taxa de mutação
-        for (int i = 0; i < solution.length; i++) {
+        int geneMutado = rand.nextInt(solution.length);
             if (rand.nextDouble() < mutationRate) {
                 // Inverte o estado do gene (0 para 1 ou 1 para 0)
-                solution[i] = (solution[i] == 0) ? 1 : 0;
+                solution[geneMutado] = (solution[geneMutado] == 0) ? 1 : 0;
             }
-        }
     }
 }
