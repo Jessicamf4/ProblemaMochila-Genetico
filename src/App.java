@@ -6,7 +6,7 @@ import java.util.Scanner;
 
 public class App {
     public static void main(String[] args) throws Exception {
-        File filePath = new File("..\\ProblemaMochilaGenetico\\Instancias\\KNAPDATA100000.txt");
+        File filePath = new File("..\\ProblemaMochilaGenetico\\Instancias\\KNAPDATA40.txt");
 
         // Lista para armazenar os itens
         Item[] items = null;
@@ -54,8 +54,8 @@ public class App {
         // Parâmetros do algoritmo genético
         int populationSize = 50;
         double crossoverRate = 0.8;
-        double mutationRate = 0.1;
-        int numGenerations = 100;
+        double mutationRate = 0.2;
+        int numGenerations = 300;
 
         // Chamada para a função que implementa o algoritmo genético
         GerarPopulacao geneticAlgorithm = new GerarPopulacao();
